@@ -19,7 +19,7 @@ components:
     type: dockerimage
     image: "quay.io/eclipse/che-nodejs10-community:nightly"
     alias: nodejs
-apiVersion: 1.0.0
+
 commands:
   - name: yarn install
     actions:
