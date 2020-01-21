@@ -1,52 +1,91 @@
 apiVersion: 1.0.0
 
 metadata:
-  name: vijay
-  
+  name: vijay-dev
+
 projects:
 
-  - name: angular-realworld-example-app
+  - name: chectl
     source:
-      location: "https://github.com/gothinkster/angular-realworld-example-app"
       type: git
-      branch: master
-	  
+      location: 'https://github.com/che-incubator/chectl.git'
+
 components:
+
+  - alias: dev
+    type: dockerimage
+    image: eclipse/che-theia-dev:next
+    mountSources: true
+    memoryLimit: 3G
+
+  - id: redhat/vscode-yaml/latest
+    type: chePlugin
+
   - id: che-incubator/typescript/latest
     type: chePlugin
-  - mountSources: true
-    endpoints:
-      - name: angular
-        port: 4200
-    memoryLimit: 1Gi
-    type: dockerimage
-    image: "quay.io/eclipse/che-nodejs10-community:nightly"
-    alias: nodejs
+    memoryLimit: 1G
 
 commands:
 
-  - name: yarn install
+  - name: Build
     actions:
-      - workdir: "${CHE_PROJECTS_ROOT}/angular-realworld-example-app"
-        type: exec
-        command: yarn install
-        component: nodejs
-		
-  - name: build
+      - type: exec
+        component: dev
+        command: >
+                 yarn
+        workdir: /projects/chectl
+
+  - name: Test
     actions:
-      - workdir: "${CHE_PROJECTS_ROOT}/angular-realworld-example-app"
-        type: exec
-        command: yarn run build
-        component: nodejs
-  - name: start
+      - type: exec
+        component: dev
+        command: >
+                 yarn test
+        workdir: /projects/chectl
+
+  - name: Run
     actions:
-      - workdir: "${CHE_PROJECTS_ROOT}/angular-realworld-example-app"
-        type: exec
-        command: yarn run start --host 0.0.0.0 --disableHostCheck true
-        component: nodejs
-  - name: lint
+      - type: exec
+        component: dev
+        command: >
+                 ./run --help
+        workdir: /projects/chectl/bin
+
+  - name: Generate Devfile
     actions:
-      - workdir: "${CHE_PROJECTS_ROOT}/angular-realworld-example-app"
-        type: exec
-        command: yarn run lint
-        component: nodejs
+      - type: exec
+        component: dev
+        command: >
+                 ./run devfile:generate \
+                     --name=chectl-test \
+                     --language=typescript \
+                     --dockerimage=eclipse/che-theia-dev:next \
+                     --git-repo=https://github.com/che-incubator/chectl.git \
+                     --command="yarn" > /projects/sample.devfile;
+                  cat /projects/sample.devfile
+        workdir: /projects/chectl/bin
+
+  - name: Create Workspace
+    actions:
+      - type: exec
+        component: dev
+        command: >
+                 cat /projects/sample.devfile | curl -F 'clbin=<-' https://clbin.com > /projects/clbin;
+                 uri=$(cat /projects/clbin); ./run workspace:start -f=$uri
+        workdir: /projects/chectl/bin
+
+  - name: Package Binaries
+    actions:
+      - type: exec
+        component: dev
+        command: >
+                 yarn pack-binaries
+        workdir: /projects/chectl
+
+  - name: Format Sources
+    actions:
+      - type: exec
+        component: dev
+        command: >
+                 yarn format
+        workdir: /projects/chectl
