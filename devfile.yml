@@ -1,6 +1,5 @@
 metadata:
   name: vijay
-  generateName: vijay-
 projects:
   - name: angular-realworld-example-app
     source:
