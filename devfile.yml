@@ -1,47 +1,45 @@
-specVersion: 0.0.1
-
-name: chectl
-
+metadata:
+  name: vijay
 projects:
-
-  - name: chectl
+  - name: angular-realworld-example-app
     source:
+      location: "https://github.com/gothinkster/angular-realworld-example-app"
       type: git
-      location: 'https://github.com/che-incubator/chectl.git'
-
+      branch: master
 components:
-
-  - alias: git
-    type: dockerimage
-    image: sunix/git-devtools
-    mountSources: true
-    memoryLimit: 256M
-
-  - alias: dev
-    type: dockerimage
-    image: eclipse/che-theia-dev:next
-    mountSources: true
-    memoryLimit: 1G
-
-  - id: redhat/vscode-yaml/latest
-    type: chePlugin
-
   - id: che-incubator/typescript/latest
     type: chePlugin
-    memoryLimit: 1G
-
+  - mountSources: true
+    endpoints:
+      - name: angular
+        port: 4200
+    memoryLimit: 1Gi
+    type: dockerimage
+    image: "quay.io/eclipse/che-nodejs10-community:nightly"
+    alias: nodejs
+apiVersion: 1.0.0
 commands:
-
-  - name: yarn
+  - name: yarn install
     actions:
-      - type: exec
-        component: dev
-        command: yarn
-        workdir: /projects/chectl
-
-  - name: yarn test
+      - workdir: "${CHE_PROJECTS_ROOT}/angular-realworld-example-app"
+        type: exec
+        command: yarn install
+        component: nodejs
+  - name: build
     actions:
-      - type: exec
-        component: dev
-        command: yarn test
-        workdir: /projects/chectl
+      - workdir: "${CHE_PROJECTS_ROOT}/angular-realworld-example-app"
+        type: exec
+        command: yarn run build
+        component: nodejs
+  - name: start
+    actions:
+      - workdir: "${CHE_PROJECTS_ROOT}/angular-realworld-example-app"
+        type: exec
+        command: yarn run start --host 0.0.0.0 --disableHostCheck true
+        component: nodejs
+  - name: lint
+    actions:
+      - workdir: "${CHE_PROJECTS_ROOT}/angular-realworld-example-app"
+        type: exec
+        command: yarn run lint
+        component: nodejs
